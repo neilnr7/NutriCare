@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../widgets/main_bottom_nav_bar.dart';
-import 'doctor_home_screen.dart';
+
+// 👇 updated path – DoctorHomeScreen is now inside /home
+import 'home/doctor_home_screen.dart';
+
 import 'doctor_chat_screen.dart';
 import 'doctor_diet_screen.dart';
 import 'doctor_profile_screen.dart';

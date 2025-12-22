@@ -1,10 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';   // <-- ADD THIS
 
 import 'screens/auth/auth_screen.dart';
 import 'screens/doctor/doctor_main_shell.dart';
 import 'screens/patient/patient_main_shell.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // 🔥 Initialize Firebase
+  await Firebase.initializeApp();
+  print("🔥 Firebase is connected!");
+
   runApp(const SamagraNutriCareApp());
 }
 

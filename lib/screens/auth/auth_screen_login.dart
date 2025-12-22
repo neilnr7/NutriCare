@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../services/doctor_service.dart';
+import '../../services/patient_service.dart';
+import '../../state/session.dart';
 
 class AuthScreenLogin extends StatefulWidget {
   const AuthScreenLogin({super.key});
@@ -9,50 +12,71 @@ class AuthScreenLogin extends StatefulWidget {
 
 class _AuthScreenLoginState extends State<AuthScreenLogin> {
   String _loginRole = 'Doctor';
-  bool _patientOtpVisible = false;
 
-  // Login controllers
-  final TextEditingController _loginEmailController = TextEditingController();
-  final TextEditingController _loginPasswordController = TextEditingController();
+  // Doctor login controllers
   final TextEditingController _loginPhoneController = TextEditingController();
-  final TextEditingController _loginOtpController = TextEditingController();
+  final TextEditingController _loginPasswordController = TextEditingController();
+
+  // Patient login controllers
+  final TextEditingController _patientPhoneController = TextEditingController();
+  final TextEditingController _patientPasswordController = TextEditingController();
+
+  bool _patientPasswordObscured = true;
+  bool _doctorPasswordObscured = true;
 
   @override
   void dispose() {
-    _loginEmailController.dispose();
-    _loginPasswordController.dispose();
     _loginPhoneController.dispose();
-    _loginOtpController.dispose();
+    _loginPasswordController.dispose();
+    _patientPhoneController.dispose();
+    _patientPasswordController.dispose();
     super.dispose();
   }
 
-  void _handleLogin() {
-    if (_loginRole == 'Doctor') {
-      // Later add Firebase; for now just navigate
-      Navigator.pushReplacementNamed(context, '/doctor-dashboard');
-    } else {
-      // Patient login: two-step (Generate OTP -> Login)
-      if (!_patientOtpVisible) {
-        setState(() {
-          _patientOtpVisible = true;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Mock: OTP generated for demo')),
+  Future<void> _handleLogin() async {
+    try {
+      Map<String, dynamic> response;
+
+      if (_loginRole == 'Doctor') {
+        // ❗ FIXED: Pass positional arguments, not named
+        response = await DoctorService.loginDoctor(
+          _loginPhoneController.text.trim(),
+          _loginPasswordController.text.trim(),
         );
+
+        if (response["success"] == true) {
+          Session.uid = response["uid"];
+          Navigator.pushReplacementNamed(context, '/doctor-dashboard');
+          return;
+        }
+
       } else {
-        Navigator.pushReplacementNamed(context, '/patient-dashboard');
+        // ❗ FIXED: Positional arguments for patient login
+        response = await PatientService.loginPatient(
+          _patientPhoneController.text.trim(),
+          _patientPasswordController.text.trim(),
+        );
+
+        if (response["success"] == true) {
+          Navigator.pushReplacementNamed(context, '/patient-dashboard');
+          return;
+        }
       }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response["error"] ?? "Login failed")),
+      );
+
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error: $e")),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final String buttonText;
-    if (_loginRole == 'Doctor') {
-      buttonText = 'Login';
-    } else {
-      buttonText = _patientOtpVisible ? 'Login' : 'Generate OTP';
-    }
+    const String buttonText = 'Login';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -70,44 +94,18 @@ class _AuthScreenLoginState extends State<AuthScreenLogin> {
             border: OutlineInputBorder(),
           ),
           items: const [
-            DropdownMenuItem(
-              value: 'Doctor',
-              child: Text('Doctor'),
-            ),
-            DropdownMenuItem(
-              value: 'Patient',
-              child: Text('Patient'),
-            ),
+            DropdownMenuItem(value: 'Doctor', child: Text('Doctor')),
+            DropdownMenuItem(value: 'Patient', child: Text('Patient')),
           ],
           onChanged: (value) {
             if (value == null) return;
-            setState(() {
-              _loginRole = value;
-              _patientOtpVisible = false;
-            });
+            setState(() => _loginRole = value);
           },
         ),
         const SizedBox(height: 16),
 
+        // ================== DOCTOR LOGIN ==================
         if (_loginRole == 'Doctor') ...[
-          TextField(
-            controller: _loginEmailController,
-            decoration: const InputDecoration(
-              labelText: 'Email',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.emailAddress,
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _loginPasswordController,
-            decoration: const InputDecoration(
-              labelText: 'Password',
-              border: OutlineInputBorder(),
-            ),
-            obscureText: true,
-          ),
-        ] else ...[
           TextField(
             controller: _loginPhoneController,
             decoration: const InputDecoration(
@@ -117,24 +115,64 @@ class _AuthScreenLoginState extends State<AuthScreenLogin> {
             keyboardType: TextInputType.phone,
           ),
           const SizedBox(height: 12),
-          if (_patientOtpVisible) ...[
-            TextField(
-              controller: _loginOtpController,
-              decoration: const InputDecoration(
-                labelText: 'Enter OTP',
-                border: OutlineInputBorder(),
+          TextField(
+            controller: _loginPasswordController,
+            obscureText: _doctorPasswordObscured,
+            decoration: InputDecoration(
+              labelText: 'Password',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _doctorPasswordObscured ? Icons.visibility_off : Icons.visibility,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _doctorPasswordObscured = !_doctorPasswordObscured;
+                  });
+                },
               ),
-              keyboardType: TextInputType.number,
             ),
-          ],
+          ),
+        ]
+
+        // ================== PATIENT LOGIN ==================
+        else ...[
+          TextField(
+            controller: _patientPhoneController,
+            decoration: const InputDecoration(
+              labelText: 'Phone Number',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.phone,
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _patientPasswordController,
+            obscureText: _patientPasswordObscured,
+            decoration: InputDecoration(
+              labelText: 'Password',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _patientPasswordObscured ? Icons.visibility_off : Icons.visibility,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _patientPasswordObscured = !_patientPasswordObscured;
+                  });
+                },
+              ),
+            ),
+          ),
         ],
 
         const SizedBox(height: 24),
+
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
             onPressed: _handleLogin,
-            child: Text(buttonText),
+            child: const Text(buttonText),
           ),
         ),
       ],

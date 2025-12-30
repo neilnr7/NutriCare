@@ -8,7 +8,10 @@ class PatientService {
   }
 
   static Future verifyOtp(
-      String email, String otp, String newPassword) async {
+      String email,
+      String otp,
+      String newPassword,
+      ) async {
     return ApiService.post("verifyEmailOTP", {
       "email": email,
       "otp": otp,
@@ -43,7 +46,7 @@ class PatientService {
     });
   }
 
-  // ✅ FIXED METHOD
+  // Patient profile fetch (used later in profile screen)
   static Future getProfile(String uid) async {
     return ApiService.get("getPatientProfile?uid=$uid");
   }

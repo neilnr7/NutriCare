@@ -58,6 +58,7 @@ class _AuthScreenLoginState extends State<AuthScreenLogin> {
         );
 
         if (response["success"] == true) {
+          Session.uid = response["uid"]; // ✅ ONLY FIX ADDED
           Navigator.pushReplacementNamed(context, '/patient-dashboard');
           return;
         }

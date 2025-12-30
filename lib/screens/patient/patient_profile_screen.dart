@@ -233,108 +233,88 @@ class _PatientProfileScreenState extends State<PatientProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final fullName = '$firstName '
-        '${middleName.isNotEmpty ? "$middleName " : ""}'
-        '$lastName';
-
-    final genderLabel =
-    gender.isNotEmpty ? gender[0].toUpperCase() : '-';
+    final fullName =
+        "$firstName ${middleName.isNotEmpty ? middleName + " " : ""}$lastName";
 
     return SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(children: [
-          Card(
-            shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-            elevation: 2,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(children: [
-                Expanded(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(fullName,
-                            style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 4),
-                        Text(
-                          _profileCompleted && age != null
-                              ? 'Age $age • Gender: $genderLabel'
-                              : 'Gender: $genderLabel',
-                          style: TextStyle(color: Colors.grey.shade600),
-                        ),
-                      ]),
+        child: Column(
+          children: [
+            infoCard("Full Name", fullName),
+            infoCard("Phone Number", phoneNumber),
+            infoCard("Email", email),
+
+            if (_profileCompleted) ...[
+              infoCard("Date of Birth", dob ?? "-"),
+              infoCard("Age", age ?? "-"),
+              infoCard("Address", address ?? "-"),
+            ],
+
+            const SizedBox(height: 20),
+
+            ElevatedButton(
+              onPressed: _loadingProfile ? null : _openSetupProfileSheet,
+              style: ElevatedButton.styleFrom(
+                minimumSize: const Size.fromHeight(46),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: Colors.blue.withOpacity(0.15),
-                  child:
-                  const Icon(Icons.person, size: 30, color: Colors.blue),
-                ),
-              ]),
-            ),
-          ),
-          const SizedBox(height: 12),
-
-          _infoCard('Phone Number', phoneNumber),
-          _infoCard('Email', email),
-
-          if (_profileCompleted) ...[
-            _infoCard('Date of Birth', dob ?? ''),
-            _infoCard('Age', age ?? ''),
-            _infoCard('Address', address ?? ''),
-          ],
-
-          const SizedBox(height: 20),
-
-          ElevatedButton(
-            onPressed: _loadingProfile ? null : _openSetupProfileSheet,
-            style: ElevatedButton.styleFrom(
-              minimumSize: const Size.fromHeight(46),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Text(
+                _profileCompleted ? 'Update Profile' : 'Setup Profile',
               ),
             ),
-            child: Text(
-              _profileCompleted ? 'Update Profile' : 'Setup Profile',
-            ),
-          ),
 
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-          OutlinedButton(
-            onPressed: () => _logout(context),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size.fromHeight(46),
-              side: BorderSide(color: Colors.red.shade300),
+            OutlinedButton(
+              onPressed: () => _logout(context),
+              style: OutlinedButton.styleFrom(
+                minimumSize: const Size.fromHeight(46),
+                side: BorderSide(color: Colors.red.shade300),
+              ),
+              child: Text(
+                'Logout',
+                style: TextStyle(color: Colors.red.shade400),
+              ),
             ),
-            child:
-            Text('Logout', style: TextStyle(color: Colors.red.shade400)),
-          ),
-        ]),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _infoCard(String label, String value) {
+  Widget infoCard(String title, String value) {
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       elevation: 1.5,
       margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
               style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.grey.shade600,
-                  fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text(value, style: const TextStyle(fontSize: 16)),
-        ]),
+                fontSize: 13,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

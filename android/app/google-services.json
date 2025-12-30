@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "354478356730",
+    "project_id": "samagra-nutricare-backend",
+    "storage_bucket": "samagra-nutricare-backend.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:354478356730:android:0aae9640aec2fa9bed3143",
+        "android_client_info": {
+          "package_name": "com.samagra.samagra_nutricare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDMdVUNlFIdGoU3jaQS9QLMBT7dQk2WexQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

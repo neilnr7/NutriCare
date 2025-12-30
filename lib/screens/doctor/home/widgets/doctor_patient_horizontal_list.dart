@@ -37,8 +37,10 @@ class DoctorPatientHorizontalList extends StatelessWidget {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) =>
-                  DoctorPatientDetailScreen(patientName: patient.name),
+              builder: (_) => DoctorPatientDetailScreen(
+                patientUid: "dummy_uid_${patient.name}", // ✅ TEMP
+                patientName: patient.name,
+              ),
             ),
           );
         },
@@ -47,7 +49,6 @@ class DoctorPatientHorizontalList extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 CircleAvatar(

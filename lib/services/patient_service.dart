@@ -2,14 +2,17 @@ import 'api_service.dart';
 
 class PatientService {
   static Future sendOtp(String email) async {
-    return ApiService.post("sendEmailOTP", {"email": email});
+    return ApiService.post("sendEmailOTP", {
+      "email": email,
+    });
   }
 
-  static Future verifyOtp(String email, String otp, String newPassword) async {
+  static Future verifyOtp(
+      String email, String otp, String newPassword) async {
     return ApiService.post("verifyEmailOTP", {
       "email": email,
       "otp": otp,
-      "newPassword": newPassword
+      "newPassword": newPassword,
     });
   }
 
@@ -38,6 +41,11 @@ class PatientService {
       "phone": phone,
       "password": password,
     });
+  }
+
+  // ✅ FIXED METHOD
+  static Future getProfile(String uid) async {
+    return ApiService.get("getPatientProfile?uid=$uid");
   }
 
   static Future updateProfile({

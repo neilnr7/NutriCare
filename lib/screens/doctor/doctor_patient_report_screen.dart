@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'reports/report_step_1_basic_details.dart';
 
 class DoctorPatientReportScreen extends StatelessWidget {
   final String patientName;
@@ -11,17 +12,19 @@ class DoctorPatientReportScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Report - $patientName'),
-      ),
+      appBar: AppBar(title: Text('Report - $patientName')),
       body: Center(
-        child: Text(
-          'Patient report for $patientName\n(placeholder screen)',
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.w500,
-          ),
+        child: ElevatedButton(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) =>
+                    ReportStep1BasicDetails(patientName: patientName),
+              ),
+            );
+          },
+          child: const Text("Generate Report"),
         ),
       ),
     );

@@ -4,21 +4,26 @@ import 'api_config.dart';
 
 class ApiService {
   // ------------------------------
-  // POST REQUEST
+  // POST REQUEST (AUTH + PUBLIC)
   // ------------------------------
   static Future<Map<String, dynamic>> post(
       String endpoint,
-      Map<String, dynamic> data,
-      ) async {
+      Map<String, dynamic> data, {
+        bool requiresAuth = true,
+      }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}$endpoint");
 
+    final headers = requiresAuth
+        ? await ApiConfig.authHeaders()
+        : ApiConfig.publicHeaders();
 
     print("➡️ POST: $url");
     print("📦 DATA: $data");
+    print("🧾 HEADERS: $headers");
 
     final response = await http.post(
       url,
-      headers: {"Content-Type": "application/json"},
+      headers: headers,
       body: jsonEncode(data),
     );
 
@@ -33,16 +38,24 @@ class ApiService {
   }
 
   // ------------------------------
-  // GET REQUEST (for profile fetch)
+  // GET REQUEST (AUTH + PUBLIC)
   // ------------------------------
-  static Future<Map<String, dynamic>> get(String endpoint) async {
+  static Future<Map<String, dynamic>> get(
+      String endpoint, {
+        bool requiresAuth = true,
+      }) async {
     final url = Uri.parse("${ApiConfig.baseUrl}$endpoint");
 
+    final headers = requiresAuth
+        ? await ApiConfig.authHeaders()
+        : ApiConfig.publicHeaders();
+
     print("➡️ GET: $url");
+    print("🧾 HEADERS: $headers");
 
     final response = await http.get(
       url,
-      headers: {"Content-Type": "application/json"},
+      headers: headers,
     );
 
     print("⬅️ Response Code: ${response.statusCode}");

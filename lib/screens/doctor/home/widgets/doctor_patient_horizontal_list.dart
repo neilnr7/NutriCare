@@ -38,7 +38,7 @@ class DoctorPatientHorizontalList extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (_) => DoctorPatientDetailScreen(
-                patientUid: "dummy_uid_${patient.name}", // ✅ TEMP
+                patientUid: patient.uid, // ✅ REAL UID
                 patientName: patient.name,
               ),
             ),

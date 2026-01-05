@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'models.dart';
 import 'widgets/appointment_card.dart';
+import '../../../services/appointment_service.dart';
 
 class DoctorDayAppointmentsScreen extends StatefulWidget {
   final DateTime date;
@@ -23,47 +24,61 @@ class _DoctorDayAppointmentsScreenState
     extends State<DoctorDayAppointmentsScreen> {
   late DateTime _currentDate;
   late List<Appointment> _dayAppointments;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _currentDate = DateTime(widget.date.year, widget.date.month, widget.date.day);
+    _currentDate =
+        DateTime(widget.date.year, widget.date.month, widget.date.day);
+    _filterAppointments();
+  }
+
+  void _filterAppointments() {
     _dayAppointments = widget.allAppointments
-        .where((a) => isSameDay(a.date, _currentDate))
+        .where((a) => isSameDay(a.appointmentDate, _currentDate))
         .toList();
   }
 
-  void _generateNextAppointments() {
-    final nextDate = _currentDate.add(const Duration(days: 7));
+  // ======================================================
+  // BACKEND — GENERATE NEXT WEEK APPOINTMENTS
+  // ======================================================
+  Future<void> _generateNextAppointments() async {
+    if (_dayAppointments.isEmpty) return;
 
-    final newAppointments = _dayAppointments
-        .map(
-          (appt) => Appointment(
-        patientName: appt.patientName,
-        date: nextDate,
-        time: appt.time,
-        status: AppointmentStatus.upcoming,
-        isMale: appt.isMale,
-      ),
-    )
-        .toList();
+    setState(() => _isLoading = true);
 
-    final updatedAll = [...widget.allAppointments, ...newAppointments];
-    widget.onAppointmentsUpdated(updatedAll);
+    try {
+      for (final appt in _dayAppointments) {
+        if (appt.isRecurring && appt.recurrenceType == "weekly") {
+          await AppointmentService.generateWeeklyAppointment(
+            appointmentId: appt.appointmentId,
+          );
+        }
+      }
 
-    setState(() {
-      _currentDate = nextDate;
-      _dayAppointments = newAppointments;
-    });
+      if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'Next week appointments created for ${formatDate(nextDate)}',
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Next week appointments generated successfully'),
         ),
-      ),
-    );
+      );
+
+      Navigator.pop(context); // DoctorHome will refetch
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed: $e')),
+      );
+    }
+
+    if (mounted) {
+      setState(() => _isLoading = false);
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -97,8 +112,10 @@ class _DoctorDayAppointmentsScreenState
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: _generateNextAppointments,
-                child: const Text('Generate Next Appointments'),
+                onPressed: _isLoading ? null : _generateNextAppointments,
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Generate Next Appointments'),
               ),
             ),
           ],

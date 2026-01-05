@@ -6,6 +6,9 @@ import 'doctor_day_appointments_screen.dart';
 import 'widgets/appointment_card.dart';
 import 'widgets/doctor_patient_horizontal_list.dart';
 
+import '../../../services/appointment_service.dart';
+import '../../../services/patient_service.dart';
+
 class DoctorHomeScreen extends StatefulWidget {
   const DoctorHomeScreen({super.key});
 
@@ -14,61 +17,104 @@ class DoctorHomeScreen extends StatefulWidget {
 }
 
 class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
-  // 0 = Upcoming, 1 = Completed, 2 = Cancelled
   int _selectedScheduleTab = 0;
 
-  // calendar state
-  DateTime _focusedMonth = DateTime.now(); // first day of current month
+  DateTime _focusedMonth = DateTime.now();
   DateTime _selectedDate = DateTime.now();
 
-  final List<PatientSummary> _patients = const [
-    PatientSummary(name: 'Ram', isMale: true),
-    PatientSummary(name: 'Neil', isMale: true),
-    PatientSummary(name: 'Aditi', isMale: false),
-    PatientSummary(name: 'Arjun', isMale: true),
-    PatientSummary(name: 'Sara', isMale: false),
-  ];
+  /// ⚠️ TEMP: Will be loaded dynamically next
+  List<PatientSummary> _patients = [];
 
-  List<Appointment> _appointments = [
-    Appointment(
-      patientName: 'Ram',
-      date: DateTime(2025, 12, 3),
-      time: '10:30 AM',
-      status: AppointmentStatus.upcoming,
-      isMale: true,
-    ),
-    Appointment(
-      patientName: 'Neil',
-      date: DateTime(2025, 12, 3),
-      time: '11:00 AM',
-      status: AppointmentStatus.upcoming,
-      isMale: true,
-    ),
-    Appointment(
-      patientName: 'Aditi',
-      date: DateTime(2025, 12, 4),
-      time: '11:30 AM',
-      status: AppointmentStatus.completed,
-      isMale: false,
-    ),
-    Appointment(
-      patientName: 'Arjun',
-      date: DateTime(2025, 12, 4),
-      time: '04:00 PM',
-      status: AppointmentStatus.cancelled,
-      isMale: true,
-    ),
-    Appointment(
-      patientName: 'Sara',
-      date: DateTime(2025, 12, 13),
-      time: '09:00 AM',
-      status: AppointmentStatus.upcoming,
-      isMale: false,
-    ),
-  ];
+  List<Appointment> _appointments = [];
 
-  void _openDayAppointments(DateTime date) {
+  @override
+  void initState() {
+    super.initState();
+    _fetchAppointmentsForDate(_selectedDate);
+  }
+
+  // ======================================================
+  // FETCH APPOINTMENTS (BACKEND)
+  // ======================================================
+  Future<void> _fetchAppointmentsForDate(DateTime date) async {
+    try {
+      final formatted =
+          "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+
+      final res =
+      await AppointmentService.getDoctorAppointmentsByDate(formatted);
+
+      if (res["success"] == true) {
+        final List list = res["appointments"];
+
+        final appointments =
+        list.map((a) => Appointment.fromMap(a)).toList();
+
+        setState(() {
+          _appointments = appointments;
+        });
+        await _buildPatientsFromAppointments(appointments);
+
+      }
+    } catch (e) {
+      debugPrint("❌ Fetch appointments failed: $e");
+    }
+  }
+
+  // ======================================================
+  // BUILD PATIENT LIST (BOTTOM HORIZONTAL LIST)
+  // ======================================================
+  Future<void> _buildPatientsFromAppointments(
+      List<Appointment> appointments,
+      ) async {
+    final Map<String, PatientSummary> uniquePatients = {};
+
+    for (final appt in appointments) {
+      if (uniquePatients.containsKey(appt.patientId)) continue;
+
+      try {
+        final res = await PatientService.getProfile(appt.patientId);
+
+        if (res["success"] == true) {
+          final data = res["data"];
+
+          final fullName =
+          "${data['firstName']} ${data['lastName']}".trim();
+
+          final isMale =
+              (data['gender'] ?? '').toLowerCase() == 'male';
+
+          uniquePatients[appt.patientId] = PatientSummary(
+            uid: appt.patientId,
+            name: fullName,
+            isMale: isMale,
+          );
+        }
+      } catch (e) {
+        debugPrint("⚠️ Failed loading patient ${appt.patientId}: $e");
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _patients = uniquePatients.values.toList();
+      });
+    }
+  }
+
+
+
+  // ======================================================
+// OPEN DAY APPOINTMENTS
+// ======================================================
+  Future<void> _openDayAppointments(DateTime date) async {
     final pureDate = DateTime(date.year, date.month, date.day);
+
+    // ✅ Wait for appointments to load BEFORE navigating
+    await _fetchAppointmentsForDate(pureDate);
+
+    if (!mounted) return;
+
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -76,24 +122,23 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
           date: pureDate,
           allAppointments: _appointments,
           onAppointmentsUpdated: (updated) {
-            setState(() {
-              _appointments = updated;
-            });
+            setState(() => _appointments = updated);
           },
         ),
       ),
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     final labelColor = Colors.grey.shade700;
 
-    // filter appointments based on selected tab
     final filteredAppointments = _appointments.where((a) {
       switch (_selectedScheduleTab) {
         case 0:
-          return a.status == AppointmentStatus.upcoming;
+          return a.status == AppointmentStatus.requested ||
+              a.status == AppointmentStatus.approved;
         case 1:
           return a.status == AppointmentStatus.completed;
         case 2:
@@ -110,38 +155,26 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
           children: [
             const Text(
               'Home',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
 
-            // Calendar at top
             DoctorCalendarCard(
               focusedMonth: _focusedMonth,
               selectedDate: _selectedDate,
               onMonthChanged: (newMonth) {
-                setState(() {
-                  _focusedMonth = newMonth;
-                });
+                setState(() => _focusedMonth = newMonth);
               },
               onDateSelected: (date) {
-                setState(() {
-                  _selectedDate = date;
-                });
+                setState(() => _selectedDate = date);
                 _openDayAppointments(date);
               },
             ),
             const SizedBox(height: 24),
 
-            // Schedule section
             const Text(
               'Schedule',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
             _buildScheduleTabs(),
@@ -158,13 +191,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Patients horizontal list at bottom
             const Text(
               'Patients',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
             DoctorPatientHorizontalList(patients: _patients),
@@ -174,7 +203,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
     );
   }
 
-  // segmented control for schedule
+  // ======================================================
+  // SCHEDULE TABS
+  // ======================================================
   Widget _buildScheduleTabs() {
     final tabs = ['Upcoming', 'Completed', 'Cancelled'];
 
@@ -190,15 +221,11 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
           return Expanded(
             child: GestureDetector(
               onTap: () {
-                setState(() {
-                  _selectedScheduleTab = index;
-                });
+                setState(() => _selectedScheduleTab = index);
               },
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                padding:
-                const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 decoration: BoxDecoration(
                   color: isSelected ? Colors.green : Colors.transparent,
                   borderRadius: BorderRadius.circular(16),
@@ -207,7 +234,6 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                 child: Text(
                   tabs[index],
                   style: TextStyle(
-                    fontSize: 14,
                     color: isSelected ? Colors.white : Colors.black87,
                     fontWeight:
                     isSelected ? FontWeight.w600 : FontWeight.normal,

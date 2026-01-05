@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../doctor_patient_report_screen.dart';
 import '../models.dart';
 import 'action_button.dart';
+import '../../../../services/appointment_service.dart';
 
 class AppointmentCard extends StatelessWidget {
   final Appointment appointment;
@@ -13,9 +14,45 @@ class AppointmentCard extends StatelessWidget {
     required this.labelColor,
   });
 
+  Future<void> _cancelAppointment(BuildContext context) async {
+    try {
+      await AppointmentService.updateAppointmentStatus(
+        appointmentId: appointment.appointmentId,
+        status: "cancelled",
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appointment cancelled')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
+  }
+
+  Future<void> _rescheduleAppointment(BuildContext context) async {
+    await AppointmentService.rescheduleAppointment(
+      appointmentId: appointment.appointmentId,
+      newDate: appointment.appointmentDate
+          .add(const Duration(days: 1))
+          .toIso8601String()
+          .split("T")[0],
+      newStartTime: "10:00",
+      newEndTime: "10:30",
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Appointment rescheduled')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final valueColor = Colors.black87;
+
+    // TEMP until patient profile is fetched
+    final patientName = appointment.patientName ?? 'Patient';
+    final isMale = true;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -25,20 +62,18 @@ class AppointmentCard extends StatelessWidget {
         elevation: 2,
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
-          onTap: () {
-            // later: open detailed appointment
-          },
+          onTap: () {},
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // name + avatar row
+                // NAME + AVATAR
                 Row(
                   children: [
                     Expanded(
                       child: Text(
-                        appointment.patientName,
+                        patientName,
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -47,50 +82,42 @@ class AppointmentCard extends StatelessWidget {
                     ),
                     CircleAvatar(
                       radius: 18,
-                      backgroundColor: appointment.isMale
+                      backgroundColor: isMale
                           ? Colors.blue.withOpacity(0.15)
                           : Colors.pink.withOpacity(0.15),
                       child: Icon(
                         Icons.person,
                         size: 20,
-                        color: appointment.isMale
-                            ? Colors.blue
-                            : Colors.pink,
+                        color: isMale ? Colors.blue : Colors.pink,
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
 
-                // date + time row
+                // DATE + TIME
                 Row(
                   children: [
                     const Icon(Icons.calendar_today_outlined, size: 18),
                     const SizedBox(width: 6),
                     Text(
-                      formatDate(appointment.date),
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: valueColor,
-                      ),
+                      formatDate(appointment.appointmentDate),
+                      style: TextStyle(fontSize: 13, color: valueColor),
                     ),
                     const SizedBox(width: 16),
                     const Icon(Icons.access_time, size: 18),
                     const SizedBox(width: 6),
                     Text(
-                      appointment.time,
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: valueColor,
-                      ),
+                      "${appointment.startTime} - ${appointment.endTime}",
+                      style: TextStyle(fontSize: 13, color: valueColor),
                     ),
                   ],
                 ),
                 const SizedBox(height: 12),
 
-                // buttons section: depends on status
-                if (appointment.status == AppointmentStatus.upcoming) ...[
-                  // Upcoming: Cancel + Reschedule
+                // ACTION BUTTONS
+                if (appointment.status == AppointmentStatus.requested ||
+                    appointment.status == AppointmentStatus.approved) ...[
                   Row(
                     children: [
                       Expanded(
@@ -98,9 +125,7 @@ class AppointmentCard extends StatelessWidget {
                           label: 'Cancel',
                           backgroundColor: Colors.grey.shade200,
                           textColor: Colors.grey.shade800,
-                          onTap: () {
-                            // later: handle cancel
-                          },
+                          onTap: () => _cancelAppointment(context),
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -109,15 +134,13 @@ class AppointmentCard extends StatelessWidget {
                           label: 'Reschedule',
                           backgroundColor: Colors.green,
                           textColor: Colors.white,
-                          onTap: () {
-                            // later: handle reschedule
-                          },
+                          onTap: () => _rescheduleAppointment(context),
                         ),
                       ),
                     ],
                   ),
-                ] else if (appointment.status == AppointmentStatus.cancelled) ...[
-                  // Cancelled: only Reschedule
+                ] else if (appointment.status ==
+                    AppointmentStatus.cancelled) ...[
                   Row(
                     children: [
                       Expanded(
@@ -125,15 +148,13 @@ class AppointmentCard extends StatelessWidget {
                           label: 'Reschedule',
                           backgroundColor: Colors.green,
                           textColor: Colors.white,
-                          onTap: () {
-                            // later: handle reschedule
-                          },
+                          onTap: () => _rescheduleAppointment(context),
                         ),
                       ),
                     ],
                   ),
-                ] else if (appointment.status == AppointmentStatus.completed) ...[
-                  // Completed: Generate Report -> navigate
+                ] else if (appointment.status ==
+                    AppointmentStatus.completed) ...[
                   Row(
                     children: [
                       Expanded(
@@ -146,7 +167,8 @@ class AppointmentCard extends StatelessWidget {
                               context,
                               MaterialPageRoute(
                                 builder: (_) => DoctorPatientReportScreen(
-                                  patientName: appointment.patientName,
+                                  appointmentId: appointment.appointmentId,
+                                  patientName: patientName,
                                 ),
                               ),
                             );

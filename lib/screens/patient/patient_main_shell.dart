@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../widgets/main_bottom_nav_bar.dart';
-import 'patient_home_screen.dart';
+
+// UPDATED IMPORT PATH
+import 'home/patient_home_screen.dart';
+
 import 'patient_chat_screen.dart';
 import 'patient_diet_screen.dart';
 import 'patient_profile_screen.dart';

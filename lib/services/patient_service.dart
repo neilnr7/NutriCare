@@ -1,10 +1,15 @@
 import 'api_service.dart';
 
 class PatientService {
+  // ------------------------------
+  // PUBLIC (NO TOKEN)
+  // ------------------------------
   static Future sendOtp(String email) async {
-    return ApiService.post("sendEmailOTP", {
-      "email": email,
-    });
+    return ApiService.post(
+      "sendEmailOTP",
+      {"email": email},
+      requiresAuth: false,
+    );
   }
 
   static Future verifyOtp(
@@ -12,11 +17,15 @@ class PatientService {
       String otp,
       String newPassword,
       ) async {
-    return ApiService.post("verifyEmailOTP", {
-      "email": email,
-      "otp": otp,
-      "newPassword": newPassword,
-    });
+    return ApiService.post(
+      "verifyEmailOTP",
+      {
+        "email": email,
+        "otp": otp,
+        "newPassword": newPassword,
+      },
+      requiresAuth: false,
+    );
   }
 
   static Future registerPatient({
@@ -28,25 +37,35 @@ class PatientService {
     required String gender,
     required String password,
   }) async {
-    return ApiService.post("registerPatient", {
-      "firstName": firstName,
-      "middleName": middleName ?? "",
-      "lastName": lastName ?? "",
-      "phone": phone,
-      "email": email,
-      "gender": gender,
-      "password": password,
-    });
+    return ApiService.post(
+      "registerPatient",
+      {
+        "firstName": firstName,
+        "middleName": middleName ?? "",
+        "lastName": lastName ?? "",
+        "phone": phone,
+        "email": email,
+        "gender": gender,
+        "password": password,
+      },
+      requiresAuth: false,
+    );
   }
 
   static Future loginPatient(String phone, String password) async {
-    return ApiService.post("loginPatient", {
-      "phone": phone,
-      "password": password,
-    });
+    return ApiService.post(
+      "loginPatient",
+      {
+        "phone": phone,
+        "password": password,
+      },
+      requiresAuth: false,
+    );
   }
 
-  // Patient profile fetch (used later in profile screen)
+  // ------------------------------
+  // PROTECTED (TOKEN REQUIRED)
+  // ------------------------------
   static Future getProfile(String uid) async {
     return ApiService.get("getPatientProfile?uid=$uid");
   }

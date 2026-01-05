@@ -3,8 +3,9 @@ import 'report_step_4_blood_reports.dart';
 
 class ReportStep3BodyMeasurements extends StatelessWidget {
   final String patientName;
+  final String appointmentId;
 
-  const ReportStep3BodyMeasurements({super.key, required this.patientName});
+  const ReportStep3BodyMeasurements({super.key, required this.patientName, required this.appointmentId});
 
   DataRow _row(String label) => DataRow(cells: [
     DataCell(Text(label)),
@@ -74,7 +75,9 @@ class ReportStep3BodyMeasurements extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (_) =>
-                  ReportStep4BloodReports(patientName: patientName),
+                  ReportStep4BloodReports(
+                      appointmentId: appointmentId,
+                      patientName: patientName),
             ),
           );
         },

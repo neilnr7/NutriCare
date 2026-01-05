@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/patient_profile.dart';
+import '../../../services/patient_service.dart';
 
 class DoctorPatientDetailScreen extends StatefulWidget {
   final String patientUid;
@@ -23,26 +24,39 @@ class _DoctorPatientDetailScreenState extends State<DoctorPatientDetailScreen> {
   @override
   void initState() {
     super.initState();
-    _loadDummyProfile();
+    _loadPatientProfile();
   }
 
-  // ✅ FRONTEND-ONLY DUMMY DATA
-  void _loadDummyProfile() async {
-    await Future.delayed(const Duration(seconds: 1)); // simulate loading
+  // ======================================================
+  // LOAD PATIENT PROFILE (BACKEND)
+  // ======================================================
+  Future<void> _loadPatientProfile() async {
+    try {
+      final res = await PatientService.getProfile(widget.patientUid);
 
-    setState(() {
-      profile = PatientProfile(
-        firstName: "Aarav",
-        middleName: "",
-        lastName: "Sharma",
-        phone: "+91 9876543210",
-        email: "aarav.sharma@example.com",
-        dob: "12/08/2001",
-        age: "23",
-        address: "Bengaluru, Karnataka",
-      );
-      isLoading = false;
-    });
+      if (res["success"] == true && res["data"] != null) {
+        final data = res["data"];
+
+        setState(() {
+          profile = PatientProfile(
+            firstName: data["firstName"] ?? "",
+            middleName: data["middleName"] ?? "",
+            lastName: data["lastName"] ?? "",
+            phone: data["phone"] ?? "",
+            email: data["email"] ?? "",
+            dob: data["dob"] ?? "",
+            age: data["age"]?.toString() ?? "",
+            address: data["address"] ?? "",
+          );
+          isLoading = false;
+        });
+      } else {
+        setState(() => isLoading = false);
+      }
+    } catch (e) {
+      debugPrint("❌ Failed to load patient profile: $e");
+      setState(() => isLoading = false);
+    }
   }
 
   Widget infoCard(String title, String value) {

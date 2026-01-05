@@ -3,8 +3,8 @@ import 'report_step_2_dietary_history.dart';
 
 class ReportStep1BasicDetails extends StatelessWidget {
   final String patientName;
-
-  const ReportStep1BasicDetails({super.key, required this.patientName});
+  final String appointmentId;
+  const ReportStep1BasicDetails({super.key, required this.patientName, required this.appointmentId});
 
   Widget field(String label) {
     return Padding(
@@ -53,7 +53,9 @@ class ReportStep1BasicDetails extends StatelessWidget {
                     context,
                     MaterialPageRoute(
                       builder: (_) =>
-                          ReportStep2DietaryHistory(patientName: patientName),
+                          ReportStep2DietaryHistory(
+                              appointmentId: appointmentId,
+                              patientName: patientName),
                     ),
                   );
                 },

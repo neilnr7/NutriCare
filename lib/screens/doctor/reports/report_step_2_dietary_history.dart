@@ -3,8 +3,9 @@ import 'report_step_3_body_measurements.dart';
 
 class ReportStep2DietaryHistory extends StatelessWidget {
   final String patientName;
+  final String appointmentId;
 
-  const ReportStep2DietaryHistory({super.key, required this.patientName});
+  const ReportStep2DietaryHistory({super.key, required this.patientName, required this.appointmentId});
 
   DataRow _row() => const DataRow(cells: [
     DataCell(_Cell()),
@@ -55,7 +56,9 @@ class ReportStep2DietaryHistory extends StatelessWidget {
             context,
             MaterialPageRoute(
               builder: (_) =>
-                  ReportStep3BodyMeasurements(patientName: patientName),
+                  ReportStep3BodyMeasurements(
+                      appointmentId: appointmentId,
+                      patientName: patientName),
             ),
           );
         },

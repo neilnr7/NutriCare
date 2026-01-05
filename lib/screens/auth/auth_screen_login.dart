@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/doctor_service.dart';
 import '../../services/patient_service.dart';
 import '../../state/session.dart';
@@ -13,13 +14,11 @@ class AuthScreenLogin extends StatefulWidget {
 class _AuthScreenLoginState extends State<AuthScreenLogin> {
   String _loginRole = 'Doctor';
 
-  // Doctor login controllers
   final TextEditingController _loginPhoneController = TextEditingController();
   final TextEditingController _loginPasswordController = TextEditingController();
-
-  // Patient login controllers
   final TextEditingController _patientPhoneController = TextEditingController();
-  final TextEditingController _patientPasswordController = TextEditingController();
+  final TextEditingController _patientPasswordController =
+  TextEditingController();
 
   bool _patientPasswordObscured = true;
   bool _doctorPasswordObscured = true;
@@ -38,36 +37,58 @@ class _AuthScreenLoginState extends State<AuthScreenLogin> {
       Map<String, dynamic> response;
 
       if (_loginRole == 'Doctor') {
-        // ❗ FIXED: Pass positional arguments, not named
         response = await DoctorService.loginDoctor(
           _loginPhoneController.text.trim(),
           _loginPasswordController.text.trim(),
         );
-
-        if (response["success"] == true) {
-          Session.uid = response["uid"];
-          Navigator.pushReplacementNamed(context, '/doctor-dashboard');
-          return;
-        }
-
       } else {
-        // ❗ FIXED: Positional arguments for patient login
         response = await PatientService.loginPatient(
           _patientPhoneController.text.trim(),
           _patientPasswordController.text.trim(),
         );
+      }
 
-        if (response["success"] == true) {
-          Session.uid = response["uid"]; // ✅ ONLY FIX ADDED
-          Navigator.pushReplacementNamed(context, '/patient-dashboard');
-          return;
+      if (response["success"] == true) {
+        final String? customToken = response["token"];
+        final String? uid = response["uid"];
+
+        if (customToken == null || customToken.isEmpty || uid == null || uid.isEmpty) {
+          throw Exception("Invalid auth data received from server");
         }
+
+        Session.uid = uid;
+
+// ✅ SAFE: customToken is guaranteed non-null here
+        //await FirebaseAuth.instance.signInWithCustomToken(customToken);
+        await FirebaseAuth.instance.signInWithCustomToken(customToken);
+
+
+
+
+        // ✅ GET FIREBASE ID TOKEN (BACKEND EXPECTS THIS)
+        final idToken =
+        await FirebaseAuth.instance.currentUser!.getIdToken(true);
+
+        if (idToken == null || idToken.isEmpty) {
+          throw Exception("Failed to retrieve Firebase ID token");
+        }
+
+// ✅ STORE ID TOKEN
+        await Session.saveToken(idToken);
+
+
+        Navigator.pushReplacementNamed(
+          context,
+          _loginRole == 'Doctor'
+              ? '/doctor-dashboard'
+              : '/patient-dashboard',
+        );
+        return;
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(response["error"] ?? "Login failed")),
       );
-
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Error: $e")),
@@ -77,8 +98,6 @@ class _AuthScreenLoginState extends State<AuthScreenLogin> {
 
   @override
   Widget build(BuildContext context) {
-    const String buttonText = 'Login';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -99,13 +118,11 @@ class _AuthScreenLoginState extends State<AuthScreenLogin> {
             DropdownMenuItem(value: 'Patient', child: Text('Patient')),
           ],
           onChanged: (value) {
-            if (value == null) return;
-            setState(() => _loginRole = value);
+            if (value != null) setState(() => _loginRole = value);
           },
         ),
         const SizedBox(height: 16),
 
-        // ================== DOCTOR LOGIN ==================
         if (_loginRole == 'Doctor') ...[
           TextField(
             controller: _loginPhoneController,
@@ -124,7 +141,9 @@ class _AuthScreenLoginState extends State<AuthScreenLogin> {
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _doctorPasswordObscured ? Icons.visibility_off : Icons.visibility,
+                  _doctorPasswordObscured
+                      ? Icons.visibility_off
+                      : Icons.visibility,
                 ),
                 onPressed: () {
                   setState(() {
@@ -134,10 +153,7 @@ class _AuthScreenLoginState extends State<AuthScreenLogin> {
               ),
             ),
           ),
-        ]
-
-        // ================== PATIENT LOGIN ==================
-        else ...[
+        ] else ...[
           TextField(
             controller: _patientPhoneController,
             decoration: const InputDecoration(
@@ -155,7 +171,9 @@ class _AuthScreenLoginState extends State<AuthScreenLogin> {
               border: const OutlineInputBorder(),
               suffixIcon: IconButton(
                 icon: Icon(
-                  _patientPasswordObscured ? Icons.visibility_off : Icons.visibility,
+                  _patientPasswordObscured
+                      ? Icons.visibility_off
+                      : Icons.visibility,
                 ),
                 onPressed: () {
                   setState(() {
@@ -173,7 +191,7 @@ class _AuthScreenLoginState extends State<AuthScreenLogin> {
           width: double.infinity,
           child: ElevatedButton(
             onPressed: _handleLogin,
-            child: const Text(buttonText),
+            child: const Text('Login'),
           ),
         ),
       ],

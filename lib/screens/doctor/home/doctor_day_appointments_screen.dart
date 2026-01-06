@@ -41,6 +41,36 @@ class _DoctorDayAppointmentsScreenState
   }
 
   // ======================================================
+  // 🔹 REFRESH DAY APPOINTMENTS (AFTER CANCEL / RESCHEDULE)
+  // ======================================================
+  Future<void> _refreshDayAppointments() async {
+    final formatted =
+        "${_currentDate.year}-${_currentDate.month.toString().padLeft(2, '0')}-${_currentDate.day.toString().padLeft(2, '0')}";
+
+    try {
+      final res =
+      await AppointmentService.getDoctorAppointmentsByDate(formatted);
+
+      if (res["success"] == true) {
+        final List list = res["appointments"];
+        final updated =
+        list.map((a) => Appointment.fromMap(a)).toList();
+
+        if (!mounted) return;
+
+        setState(() {
+          _dayAppointments = updated
+              .where((a) => isSameDay(a.appointmentDate, _currentDate))
+              .toList();
+        });
+
+        // 🔹 notify home screen
+        widget.onAppointmentsUpdated(updated);
+      }
+    } catch (_) {}
+  }
+
+  // ======================================================
   // BACKEND — GENERATE NEXT WEEK APPOINTMENTS
   // ======================================================
   Future<void> _generateNextAppointments() async {
@@ -79,7 +109,6 @@ class _DoctorDayAppointmentsScreenState
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     final labelColor = Colors.grey.shade700;
@@ -104,6 +133,9 @@ class _DoctorDayAppointmentsScreenState
                   return AppointmentCard(
                     appointment: appt,
                     labelColor: labelColor,
+
+                    // 🔹 ONLY ADDITION
+                    onActionCompleted: _refreshDayAppointments,
                   );
                 },
               ),

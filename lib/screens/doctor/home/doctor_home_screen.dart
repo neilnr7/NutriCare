@@ -22,9 +22,7 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
   DateTime _focusedMonth = DateTime.now();
   DateTime _selectedDate = DateTime.now();
 
-  /// ⚠️ TEMP: Will be loaded dynamically next
   List<PatientSummary> _patients = [];
-
   List<Appointment> _appointments = [];
 
   @override
@@ -33,9 +31,6 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
     _fetchAppointmentsForDate(_selectedDate);
   }
 
-  // ======================================================
-  // FETCH APPOINTMENTS (BACKEND)
-  // ======================================================
   Future<void> _fetchAppointmentsForDate(DateTime date) async {
     try {
       final formatted =
@@ -54,19 +49,14 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
           _appointments = appointments;
         });
         await _buildPatientsFromAppointments(appointments);
-
       }
     } catch (e) {
       debugPrint("❌ Fetch appointments failed: $e");
     }
   }
 
-  // ======================================================
-  // BUILD PATIENT LIST (BOTTOM HORIZONTAL LIST)
-  // ======================================================
   Future<void> _buildPatientsFromAppointments(
-      List<Appointment> appointments,
-      ) async {
+      List<Appointment> appointments) async {
     final Map<String, PatientSummary> uniquePatients = {};
 
     for (final appt in appointments) {
@@ -102,15 +92,9 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
     }
   }
 
-
-
-  // ======================================================
-// OPEN DAY APPOINTMENTS
-// ======================================================
   Future<void> _openDayAppointments(DateTime date) async {
     final pureDate = DateTime(date.year, date.month, date.day);
 
-    // ✅ Wait for appointments to load BEFORE navigating
     await _fetchAppointmentsForDate(pureDate);
 
     if (!mounted) return;
@@ -128,7 +112,6 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
       ),
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -186,6 +169,11 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
                   AppointmentCard(
                     appointment: appt,
                     labelColor: labelColor,
+
+                    // 🔹 ONLY ADDITION
+                    onActionCompleted: () {
+                      _fetchAppointmentsForDate(_selectedDate);
+                    },
                   ),
               ],
             ),
@@ -203,9 +191,6 @@ class _DoctorHomeScreenState extends State<DoctorHomeScreen> {
     );
   }
 
-  // ======================================================
-  // SCHEDULE TABS
-  // ======================================================
   Widget _buildScheduleTabs() {
     final tabs = ['Upcoming', 'Completed', 'Cancelled'];
 

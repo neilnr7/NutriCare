@@ -8,10 +8,14 @@ class AppointmentCard extends StatelessWidget {
   final Appointment appointment;
   final Color labelColor;
 
+  // 🔹 NEW: callback to notify parent
+  final VoidCallback? onActionCompleted;
+
   const AppointmentCard({
     super.key,
     required this.appointment,
     required this.labelColor,
+    this.onActionCompleted, // 🔹 added
   });
 
   Future<void> _cancelAppointment(BuildContext context) async {
@@ -24,6 +28,9 @@ class AppointmentCard extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Appointment cancelled')),
       );
+
+      // 🔹 notify parent to refresh
+      onActionCompleted?.call();
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Error: $e')));
@@ -31,26 +38,33 @@ class AppointmentCard extends StatelessWidget {
   }
 
   Future<void> _rescheduleAppointment(BuildContext context) async {
-    await AppointmentService.rescheduleAppointment(
-      appointmentId: appointment.appointmentId,
-      newDate: appointment.appointmentDate
-          .add(const Duration(days: 1))
-          .toIso8601String()
-          .split("T")[0],
-      newStartTime: "10:00",
-      newEndTime: "10:30",
-    );
+    try {
+      await AppointmentService.rescheduleAppointment(
+        appointmentId: appointment.appointmentId,
+        newDate: appointment.appointmentDate
+            .add(const Duration(days: 1))
+            .toIso8601String()
+            .split("T")[0],
+        newStartTime: "10:00",
+        newEndTime: "10:30",
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Appointment rescheduled')),
-    );
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Appointment rescheduled')),
+      );
+
+      // 🔹 notify parent to refresh
+      onActionCompleted?.call();
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final valueColor = Colors.black87;
 
-    // TEMP until patient profile is fetched
     final patientName = appointment.patientName ?? 'Patient';
     final isMale = true;
 
@@ -68,7 +82,6 @@ class AppointmentCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // NAME + AVATAR
                 Row(
                   children: [
                     Expanded(
@@ -95,7 +108,6 @@ class AppointmentCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // DATE + TIME
                 Row(
                   children: [
                     const Icon(Icons.calendar_today_outlined, size: 18),
@@ -115,7 +127,6 @@ class AppointmentCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
 
-                // ACTION BUTTONS
                 if (appointment.status == AppointmentStatus.requested ||
                     appointment.status == AppointmentStatus.approved) ...[
                   Row(

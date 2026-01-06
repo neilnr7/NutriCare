@@ -36,12 +36,14 @@ class _DoctorDayAppointmentsScreenState
 
   void _filterAppointments() {
     _dayAppointments = widget.allAppointments
-        .where((a) => isSameDay(a.appointmentDate, _currentDate))
+        .where((a) =>
+    isSameDay(a.appointmentDate, _currentDate) &&
+        a.status != AppointmentStatus.rescheduled) // 🔹 FIX
         .toList();
   }
 
   // ======================================================
-  // 🔹 REFRESH DAY APPOINTMENTS (AFTER CANCEL / RESCHEDULE)
+  // 🔹 REFRESH DAY APPOINTMENTS (AFTER CANCEL / COMPLETE / RESCHEDULE)
   // ======================================================
   Future<void> _refreshDayAppointments() async {
     final formatted =
@@ -60,11 +62,12 @@ class _DoctorDayAppointmentsScreenState
 
         setState(() {
           _dayAppointments = updated
-              .where((a) => isSameDay(a.appointmentDate, _currentDate))
+              .where((a) =>
+          isSameDay(a.appointmentDate, _currentDate) &&
+              a.status != AppointmentStatus.rescheduled) // 🔹 FIX
               .toList();
         });
 
-        // 🔹 notify home screen
         widget.onAppointmentsUpdated(updated);
       }
     } catch (_) {}
@@ -95,7 +98,7 @@ class _DoctorDayAppointmentsScreenState
         ),
       );
 
-      Navigator.pop(context); // DoctorHome will refetch
+      Navigator.pop(context);
     } catch (e) {
       if (!mounted) return;
 
@@ -133,8 +136,6 @@ class _DoctorDayAppointmentsScreenState
                   return AppointmentCard(
                     appointment: appt,
                     labelColor: labelColor,
-
-                    // 🔹 ONLY ADDITION
                     onActionCompleted: _refreshDayAppointments,
                   );
                 },

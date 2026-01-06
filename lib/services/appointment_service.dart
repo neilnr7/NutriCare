@@ -38,6 +38,16 @@ class AppointmentService {
     );
   }
 
+  // ======================================================
+  // 🔹 DOCTOR — GET APPOINTMENTS BY STATUS
+  // completed | cancelled
+  // ======================================================
+  static Future getDoctorAppointmentsByStatus(String status) {
+    return ApiService.get(
+      "getDoctorAppointmentsByStatus?status=$status",
+      requiresAuth: true,
+    );
+  }
 
   // ======================================================
   // DOCTOR — UPDATE STATUS
@@ -96,8 +106,8 @@ class AppointmentService {
   }
 
   // ======================================================
-// DOCTOR — GENERATE WEEKLY APPOINTMENT
-// ======================================================
+  // DOCTOR — GENERATE WEEKLY APPOINTMENT
+  // ======================================================
   static Future generateWeeklyAppointment({
     required String appointmentId,
   }) {
@@ -109,7 +119,6 @@ class AppointmentService {
       requiresAuth: true,
     );
   }
-
 
   // ======================================================
   // DOCTOR — BLOCK CALENDAR
@@ -133,13 +142,12 @@ class AppointmentService {
   }
 
   // ======================================================
-// PATIENT — GET UPCOMING APPOINTMENTS
-// ======================================================
+  // PATIENT — GET UPCOMING APPOINTMENTS
+  // ======================================================
   static Future getPatientAppointments() {
     return ApiService.get(
       "getPatientAppointments",
       requiresAuth: true,
     );
   }
-
 }

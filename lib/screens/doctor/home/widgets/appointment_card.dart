@@ -4,18 +4,20 @@ import '../models.dart';
 import 'action_button.dart';
 import '../../../../services/appointment_service.dart';
 
+// 🔹 NEW import (doctor reschedule UI)
+import './doctor_reschedule_appointment_screen.dart';
+
 class AppointmentCard extends StatelessWidget {
   final Appointment appointment;
   final Color labelColor;
 
-  // 🔹 NEW: callback to notify parent
   final VoidCallback? onActionCompleted;
 
   const AppointmentCard({
     super.key,
     required this.appointment,
     required this.labelColor,
-    this.onActionCompleted, // 🔹 added
+    this.onActionCompleted,
   });
 
   Future<void> _cancelAppointment(BuildContext context) async {
@@ -29,7 +31,6 @@ class AppointmentCard extends StatelessWidget {
         const SnackBar(content: Text('Appointment cancelled')),
       );
 
-      // 🔹 notify parent to refresh
       onActionCompleted?.call();
     } catch (e) {
       ScaffoldMessenger.of(context)
@@ -37,28 +38,36 @@ class AppointmentCard extends StatelessWidget {
     }
   }
 
-  Future<void> _rescheduleAppointment(BuildContext context) async {
+  // 🔹 NEW: COMPLETE APPOINTMENT
+  Future<void> _completeAppointment(BuildContext context) async {
     try {
-      await AppointmentService.rescheduleAppointment(
+      await AppointmentService.updateAppointmentStatus(
         appointmentId: appointment.appointmentId,
-        newDate: appointment.appointmentDate
-            .add(const Duration(days: 1))
-            .toIso8601String()
-            .split("T")[0],
-        newStartTime: "10:00",
-        newEndTime: "10:30",
+        status: "completed",
       );
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Appointment rescheduled')),
+        const SnackBar(content: Text('Appointment completed')),
       );
 
-      // 🔹 notify parent to refresh
       onActionCompleted?.call();
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text('Error: $e')));
     }
+  }
+
+  // 🔹 UPDATED: OPEN RESCHEDULE SCREEN
+  void _openReschedule(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DoctorRescheduleAppointmentScreen(
+          appointment: appointment,
+          onRescheduled: onActionCompleted,
+        ),
+      ),
+    );
   }
 
   @override
@@ -145,7 +154,20 @@ class AppointmentCard extends StatelessWidget {
                           label: 'Reschedule',
                           backgroundColor: Colors.green,
                           textColor: Colors.white,
-                          onTap: () => _rescheduleAppointment(context),
+                          onTap: () => _openReschedule(context),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ActionButton(
+                          label: 'Complete',
+                          backgroundColor: Colors.blue,
+                          textColor: Colors.white,
+                          onTap: () => _completeAppointment(context),
                         ),
                       ),
                     ],
@@ -159,7 +181,7 @@ class AppointmentCard extends StatelessWidget {
                           label: 'Reschedule',
                           backgroundColor: Colors.green,
                           textColor: Colors.white,
-                          onTap: () => _rescheduleAppointment(context),
+                          onTap: () => _openReschedule(context),
                         ),
                       ),
                     ],

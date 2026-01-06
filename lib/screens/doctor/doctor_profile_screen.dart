@@ -98,7 +98,6 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
   }
 
   void _openSetupProfileSheet() {
-    // prefill if already set
     _dobController.text = dob ?? '';
     _ageController.text = age ?? '';
     _addressController.text = address ?? '';
@@ -114,7 +113,6 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
         final bottomInset = MediaQuery.of(context).viewInsets.bottom;
         final Color cardColor = Colors.white;
         final Color labelColor = Colors.grey.shade600;
-        final Color valueColor = Colors.black87;
 
         return Padding(
           padding: EdgeInsets.only(
@@ -141,63 +139,11 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                 const Text(
                   'Setup Profile',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                 ),
                 const SizedBox(height: 16),
 
-                // Profile picture card placeholder
-                Card(
-                  color: cardColor,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  elevation: 1.5,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 28,
-                          backgroundColor: Colors.green.withOpacity(0.15),
-                          child: const Icon(
-                            Icons.person,
-                            size: 32,
-                            color: Colors.green,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Text(
-                            'Profile Picture',
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: valueColor,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        OutlinedButton.icon(
-                          onPressed: () {
-                            // later: open image picker
-                          },
-                          icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                          label: const Text('Change'),
-                          style: OutlinedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // DOB card (with auto-slash formatter)
+                // DOB card
                 Card(
                   color: cardColor,
                   shape: RoundedRectangleBorder(
@@ -249,105 +195,63 @@ class _DoctorProfileScreenState extends State<DoctorProfileScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Age',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: labelColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        Text('Age',
+                            style: TextStyle(fontSize: 13, color: labelColor, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _ageController,
-                          decoration: const InputDecoration(
-                            hintText: '35',
-                            border: OutlineInputBorder(),
-                          ),
+                          decoration: const InputDecoration(border: OutlineInputBorder()),
                           keyboardType: TextInputType.number,
                         ),
                         const SizedBox(height: 16),
-                        Text(
-                          'Address',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: labelColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        Text('Address',
+                            style: TextStyle(fontSize: 13, color: labelColor, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _addressController,
-                          decoration: const InputDecoration(
-                            hintText: 'Clinic / Hospital address',
-                            border: OutlineInputBorder(),
-                          ),
+                          decoration: const InputDecoration(border: OutlineInputBorder()),
                           maxLines: 2,
                         ),
                         const SizedBox(height: 16),
-                        Text(
-                          'Specialization',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: labelColor,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
+                        Text('Specialization',
+                            style: TextStyle(fontSize: 13, color: labelColor, fontWeight: FontWeight.w600)),
                         const SizedBox(height: 8),
                         TextField(
                           controller: _specializationController,
-                          decoration: const InputDecoration(
-                            hintText: 'e.g. Cardiologist, Pediatrician',
-                            border: OutlineInputBorder(),
-                          ),
+                          decoration: const InputDecoration(border: OutlineInputBorder()),
                         ),
                       ],
                     ),
                   ),
                 ),
-                  const SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () async {
-                        final dobRaw = _dobController.text.replaceAll('/', '');
-
-                        String? formattedDob;
-                        if (dobRaw.isNotEmpty && dobRaw.length == 8) {
-                          formattedDob =
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      final dobRaw = _dobController.text.replaceAll('/', '');
+                      final formattedDob =
                           '${dobRaw.substring(0, 2)}/${dobRaw.substring(2, 4)}/${dobRaw.substring(4)}';
-                        }
 
-                        try {
-                          await DoctorService.updateProfile(
-                            uid: Session.uid!,
-                            dob: formattedDob!,
-                            age: int.parse(_ageController.text.trim()),
-                            address: _addressController.text.trim(),
-                            profilePicture: null,
-                          );
+                      await DoctorService.updateProfile(
+                        uid: Session.uid!,
+                        dob: formattedDob,
+                        age: int.parse(_ageController.text.trim()),
+                        address: _addressController.text.trim(),
+                        profilePicture: null,
+                      );
 
-                          // 🔄 Reload fresh data from backend
-                          await _loadDoctorProfile();
-
-                          Navigator.pop(context);
-                        } catch (e) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Profile update failed")),
-                          );
-                        }
-                      },
-
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(46),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                      ),
-                      child: const Text('Save Profile Details'),
+                      await _loadDoctorProfile();
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size.fromHeight(46),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                     ),
+                    child: const Text('Save Profile Details'),
                   ),
+                ),
               ],
             ),
           ),

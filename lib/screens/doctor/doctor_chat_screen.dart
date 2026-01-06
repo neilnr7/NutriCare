@@ -23,7 +23,10 @@ class DoctorChatScreen extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0.5,
-          title: const Text('Messages', style: TextStyle(color: Colors.black87, fontSize: 20, fontWeight: FontWeight.w700)),
+          title: const Text(
+            'Messages',
+            style: TextStyle(color: Colors.black87, fontSize: 20, fontWeight: FontWeight.w700),
+          ),
           iconTheme: const IconThemeData(color: Colors.black87),
         ),
         body: Column(
@@ -68,7 +71,6 @@ class DoctorChatScreen extends StatelessWidget {
                                   backgroundColor: t.isMale ? Colors.blue.shade50 : Colors.pink.shade50,
                                   child: Icon(Icons.person, color: t.isMale ? Colors.blue : Colors.pink),
                                 ),
-                                // small online indicator mock
                                 Container(
                                   width: 12,
                                   height: 12,
@@ -88,7 +90,11 @@ class DoctorChatScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     t.name,
-                                    style: const TextStyle(color: Colors.black87, fontSize: 16, fontWeight: FontWeight.w700),
+                                    style: const TextStyle(
+                                      color: Colors.black87,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
@@ -114,17 +120,6 @@ class DoctorChatScreen extends StatelessWidget {
               ),
             ),
           ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const DoctorChatDetailScreen(patientName: 'New Patient'),
-              ),
-            );
-          },
-          backgroundColor: Colors.green.shade600,
-          child: const Icon(Icons.create, color: Colors.white),
         ),
       ),
     );

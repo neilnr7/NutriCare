@@ -1,32 +1,52 @@
+
 // lib/screens/patient/chat/patient_chat_detail_screen.dart
 import 'package:flutter/material.dart';
+import '../../../services/chat_service.dart';
 
 class PatientChatDetailScreen extends StatefulWidget {
+  final String chatId;
   final String doctorName;
-  const PatientChatDetailScreen({super.key, required this.doctorName});
+
+  const PatientChatDetailScreen({
+    super.key,
+    required this.chatId,
+    required this.doctorName,
+  });
 
   @override
-  State<PatientChatDetailScreen> createState() => _PatientChatDetailScreenState();
+  State<PatientChatDetailScreen> createState() =>
+      _PatientChatDetailScreenState();
 }
 
 class _PatientChatDetailScreenState extends State<PatientChatDetailScreen>
     with TickerProviderStateMixin {
-  final GlobalKey<AnimatedListState> _listKey = GlobalKey<AnimatedListState>();
+  final GlobalKey<AnimatedListState> _listKey =
+  GlobalKey<AnimatedListState>();
   final TextEditingController _controller = TextEditingController();
 
-  final List<_Msg> _messages = [
-    _Msg(text: 'Hello Doctor, I have a doubt about my diet.', fromDoctor: false),
-    _Msg(text: 'Sure, tell me what happened.', fromDoctor: true),
-    _Msg(text: 'I feel dizzy after lunch.', fromDoctor: false),
-  ];
+  final List<_Msg> _messages = [];
 
   @override
   void initState() {
     super.initState();
+    _loadMessages();
+    ChatService.markChatAsRead(widget.chatId);
+  }
+
+  Future<void> _loadMessages() async {
+    final msgs = await ChatService.getMessages(widget.chatId);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final listState = _listKey.currentState;
       if (listState != null) {
-        for (int i = 0; i < _messages.length; i++) {
+        for (int i = 0; i < msgs.length; i++) {
+          final m = msgs[i];
+          _messages.add(
+            _Msg(
+              text: m['text'],
+              fromDoctor: m['senderRole'] == 'doctor',
+            ),
+          );
           listState.insertItem(
             i,
             duration: Duration(milliseconds: 200 + (i * 50)),
@@ -36,25 +56,23 @@ class _PatientChatDetailScreenState extends State<PatientChatDetailScreen>
     });
   }
 
-  void _sendMessage() {
+  void _sendMessage() async {
     final text = _controller.text.trim();
     if (text.isEmpty) return;
 
     final newMsg = _Msg(text: text, fromDoctor: false);
     final insertIndex = _messages.length;
     _messages.add(newMsg);
-    _listKey.currentState
-        ?.insertItem(insertIndex, duration: const Duration(milliseconds: 300));
+    _listKey.currentState?.insertItem(
+      insertIndex,
+      duration: const Duration(milliseconds: 300),
+    );
     _controller.clear();
 
-    Future.delayed(const Duration(milliseconds: 700), () {
-      final reply =
-      _Msg(text: 'Thanks, I will follow up tomorrow.', fromDoctor: true);
-      final replyIndex = _messages.length;
-      _messages.add(reply);
-      _listKey.currentState
-          ?.insertItem(replyIndex, duration: const Duration(milliseconds: 300));
-    });
+    await ChatService.sendMessage(
+      chatId: widget.chatId,
+      text: text,
+    );
   }
 
   Widget _buildItem(
@@ -138,8 +156,7 @@ class _PatientChatDetailScreenState extends State<PatientChatDetailScreen>
           CircleAvatar(
             radius: 18,
             backgroundColor: Colors.blue.shade50,
-            child:
-            Icon(Icons.person, color: Colors.blue.shade700),
+            child: Icon(Icons.person, color: Colors.blue.shade700),
           ),
           const SizedBox(width: 12),
           Text(
@@ -183,15 +200,13 @@ class _PatientChatDetailScreenState extends State<PatientChatDetailScreen>
                 children: [
                   Expanded(
                     child: Container(
-                      padding:
-                      const EdgeInsets.symmetric(horizontal: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color:
-                            Colors.black.withOpacity(0.03),
+                            color: Colors.black.withOpacity(0.03),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           )
@@ -199,8 +214,8 @@ class _PatientChatDetailScreenState extends State<PatientChatDetailScreen>
                       ),
                       child: TextField(
                         controller: _controller,
-                        style: const TextStyle(
-                            color: Colors.black87),
+                        style:
+                        const TextStyle(color: Colors.black87),
                         decoration: const InputDecoration(
                           hintText: 'Type a message',
                           border: InputBorder.none,

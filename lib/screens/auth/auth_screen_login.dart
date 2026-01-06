@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/doctor_service.dart';
 import '../../services/patient_service.dart';
 import '../../state/session.dart';
+import '../../services/api_auth_storage.dart';
 
 class AuthScreenLogin extends StatefulWidget {
   const AuthScreenLogin({super.key});
@@ -52,20 +53,19 @@ class _AuthScreenLoginState extends State<AuthScreenLogin> {
         final String? customToken = response["token"];
         final String? uid = response["uid"];
 
-        if (customToken == null || customToken.isEmpty || uid == null || uid.isEmpty) {
+        if (customToken == null ||
+            customToken.isEmpty ||
+            uid == null ||
+            uid.isEmpty) {
           throw Exception("Invalid auth data received from server");
         }
 
         Session.uid = uid;
 
-// ✅ SAFE: customToken is guaranteed non-null here
-        //await FirebaseAuth.instance.signInWithCustomToken(customToken);
+        // 🔐 Firebase login
         await FirebaseAuth.instance.signInWithCustomToken(customToken);
 
-
-
-
-        // ✅ GET FIREBASE ID TOKEN (BACKEND EXPECTS THIS)
+        // 🔑 Firebase ID token
         final idToken =
         await FirebaseAuth.instance.currentUser!.getIdToken(true);
 
@@ -73,9 +73,15 @@ class _AuthScreenLoginState extends State<AuthScreenLogin> {
           throw Exception("Failed to retrieve Firebase ID token");
         }
 
-// ✅ STORE ID TOKEN
+        // ✅ EXISTING
         await Session.saveToken(idToken);
 
+        // ✅ REQUIRED FOR CHAT (NEW, SAFE)
+        await ApiAuthStorage.saveAuthData(
+          uid: uid,
+          token: idToken,
+          role: _loginRole.toLowerCase(), // "doctor" or "patient"
+        );
 
         Navigator.pushReplacementNamed(
           context,
@@ -95,6 +101,7 @@ class _AuthScreenLoginState extends State<AuthScreenLogin> {
       );
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../services/appointment_service.dart';
 import '../../../services/doctor_service.dart';
+import '../../../services/chat_service.dart';
+import '../../../services/api_auth_storage.dart';
 
 class BookAppointmentScreen extends StatefulWidget {
   const BookAppointmentScreen({super.key});
@@ -96,6 +98,15 @@ class _BookAppointmentScreenState extends State<BookAppointmentScreen> {
       if (!mounted) return;
 
       if (res["success"] == true) {
+        // ✅ OPTION 3 — AUTO CREATE CHAT (SILENT)
+        final patientId = await ApiAuthStorage.getUid();
+        if (patientId != null) {
+          await ChatService.createOrGetChat(
+            doctorId: _selectedDoctorId!,
+            patientId: patientId,
+          );
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Appointment booked successfully")),
         );

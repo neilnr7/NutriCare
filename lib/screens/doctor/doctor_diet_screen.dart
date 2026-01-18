@@ -128,22 +128,32 @@ class _DoctorAssignDietScreenState extends State<_DoctorAssignDietScreen> {
 
   Future<void> _loadDiet() async {
     try {
-      final diet = await DietService.getDietForDoctor(
+      final response = await DietService.getDietForDoctor(
         patientId: widget.patientId,
       );
 
-      if (diet != null) {
+      if (response != null && response["diet"] != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _tableKey.currentState?.setWeeklyDiet(diet);
+          _tableKey.currentState?.setWeeklyDiet(response["diet"]);
+          _tableKey.currentState?.setCompletionStatus(
+            response["status"] ?? {},
+          );
         });
+      } else {
+        // ✅ Diet not assigned yet
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Diet not assigned yet")),
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Failed to load diet")),
       );
+    } finally {
+      setState(() => _loading = false);
     }
-    setState(() => _loading = false);
   }
+
 
 
   bool _saving = false;

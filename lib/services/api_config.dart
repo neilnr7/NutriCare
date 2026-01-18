@@ -2,7 +2,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiConfig {
   static const String baseUrl =
-      "http://192.168.1.11:5001/demo-no-project/us-central1/";
+      "http://10.90.180.21:5001/demo-no-project/us-central1/";
 
   static const _storage = FlutterSecureStorage();
 

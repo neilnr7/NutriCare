@@ -74,14 +74,12 @@ class DietService {
     );
 
     if (response["success"] != true) {
-      throw Exception(
-        response["error"] ?? "Failed to load diet plan",
-      );
+      throw Exception(response["error"] ?? "Failed to load diet plan",);
     }
 
-    // diet can be null if not created yet
-    return response["diet"];
+    return response; // NOT response["diet"]
   }
+
 
   // =======================================================
   // 5️⃣ PATIENT — GET MY DIET (READ ONLY)
@@ -93,11 +91,61 @@ class DietService {
     );
 
     if (response["success"] != true) {
+      throw Exception(response["error"] ?? "Failed to load patient diet",);
+    }
+
+    return response; // NOT response["diet"]
+  }
+
+
+
+  // =======================================================
+  // 6️⃣ PATIENT — UPDATE DIET COMPLETION STATUS ✅ NEW
+  // =======================================================
+  static Future<void> updateDietStatus({
+    required String day,
+    required String slot,
+    required bool completed,
+  }) async {
+    final response = await ApiService.post(
+      "updateDietStatus",
+      {
+        "day": day,
+        "slot": slot,
+        "completed": completed,
+      },
+      requiresAuth: true,
+    );
+
+    if (response["success"] != true) {
       throw Exception(
-        response["error"] ?? "Failed to load patient diet",
+        response["error"] ?? "Failed to update diet status",
+      );
+    }
+  }
+
+
+  // =======================================================
+  // 7️⃣ DOCTOR / PATIENT — GET DIET COMPLETION STATUS ✅ NEW
+  // =======================================================
+  static Future<Map<String, dynamic>?> getDietStatus({
+    String? patientId, // required for doctor, null for patient
+  }) async {
+    final endpoint = patientId == null
+        ? "getDietStatus"
+        : "getDietStatus?patientId=$patientId";
+
+    final response = await ApiService.get(
+      endpoint,
+      requiresAuth: true,
+    );
+
+    if (response["success"] != true) {
+      throw Exception(
+        response["error"] ?? "Failed to load diet status",
       );
     }
 
-    return response["diet"];
+    return response["weeklyStatus"];
   }
 }

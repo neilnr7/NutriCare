@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'diet_time_slot.dart';
+import '../../services/diet_service.dart';
 
 class DietWeekTable extends StatefulWidget {
   final bool editable; // true = doctor, false = patient
@@ -36,6 +37,9 @@ class DietWeekTableState extends State<DietWeekTable> {
 
   late final Map<String, List<TextEditingController>> _controllers;
 
+  // ✅ NEW: completion tracking
+  late final Map<String, List<bool>> _completed;
+
   @override
   void initState() {
     super.initState();
@@ -47,9 +51,17 @@ class DietWeekTableState extends State<DietWeekTable> {
               (_) => TextEditingController(),
         )
     };
+
+    _completed = {
+      for (final day in _days)
+        day: List.generate(
+          _slots.length,
+              (_) => false,
+        )
+    };
   }
 
-  /// ✅ FOR BACKEND SAVE
+  /// ✅ FOR BACKEND SAVE (diet text only – unchanged)
   Map<String, Map<String, String>> getWeeklyDiet() {
     return {
       for (final day in _days)
@@ -60,7 +72,7 @@ class DietWeekTableState extends State<DietWeekTable> {
     };
   }
 
-  /// ✅ FOR BACKEND LOAD
+  /// ✅ FOR BACKEND LOAD (diet text only – unchanged)
   void setWeeklyDiet(Map<String, dynamic> weeklyDiet) {
     for (final day in _days) {
       if (!weeklyDiet.containsKey(day)) continue;
@@ -73,6 +85,32 @@ class DietWeekTableState extends State<DietWeekTable> {
 
     setState(() {});
   }
+
+  /// ✅ NEW: expose completion status (for later backend use)
+  Map<String, Map<String, bool>> getCompletionStatus() {
+    return {
+      for (final day in _days)
+        day: {
+          for (int i = 0; i < _slots.length; i++)
+            _slots[i]: _completed[day]![i],
+        }
+    };
+  }
+
+  /// ✅ LOAD COMPLETION STATUS FROM BACKEND
+  void setCompletionStatus(Map<String, dynamic> weeklyStatus) {
+    for (final day in _days) {
+      if (!weeklyStatus.containsKey(day)) continue;
+
+      for (int i = 0; i < _slots.length; i++) {
+        _completed[day]![i] =
+            weeklyStatus[day][_slots[i]] ?? false;
+      }
+    }
+
+    setState(() {});
+  }
+
 
   @override
   void dispose() {
@@ -124,6 +162,21 @@ class DietWeekTableState extends State<DietWeekTable> {
                   label: _slots[i],
                   controller: controllers[i],
                   editable: widget.editable,
+                  completed: _completed[day]![i],
+                  onStatusChanged: widget.editable
+                      ? null
+                      : (val) async {
+                    setState(() {
+                      _completed[day]![i] = val;
+                    });
+
+                    await DietService.updateDietStatus(
+                      day: day,
+                      slot: _slots[i],
+                      completed: val,
+                    );
+                  },
+
                 ),
             ],
           ),

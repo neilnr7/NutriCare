@@ -16,7 +16,7 @@
 
     // 🔥 CONNECT TO AUTH EMULATOR (CRITICAL)
     FirebaseAuth.instance.useAuthEmulator(
-      '192.168.1.11', // 🔴 YOUR PC IP (NOT localhost)
+      '10.90.180.21', // 🔴 YOUR PC IP (NOT localhost)
       9099,
     );
 

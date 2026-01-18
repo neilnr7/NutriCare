@@ -5,11 +5,17 @@ class DietTimeSlot extends StatelessWidget {
   final TextEditingController controller;
   final bool editable;
 
+  // ✅ NEW
+  final bool completed;
+  final ValueChanged<bool>? onStatusChanged;
+
   const DietTimeSlot({
     super.key,
     required this.label,
     required this.controller,
     required this.editable,
+    this.completed = false,
+    this.onStatusChanged,
   });
 
   @override
@@ -33,13 +39,32 @@ class DietTimeSlot extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 🔹 Time label
-          Text(
-            label,
-            style: theme.textTheme.labelLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: Colors.grey.shade800,
-            ),
+          // 🔹 Header row (label + checkbox)
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade800,
+                  ),
+                ),
+              ),
+
+              // ✅ Checkbox for BOTH
+              Checkbox(
+                value: completed,
+                onChanged: editable
+                    ? null // 👨‍⚕️ doctor → view only
+                    : (val) {
+                  if (val != null && onStatusChanged != null) {
+                    onStatusChanged!(val);
+                  }
+                },
+                activeColor: Colors.green,
+              ),
+            ],
           ),
           const SizedBox(height: 8),
 

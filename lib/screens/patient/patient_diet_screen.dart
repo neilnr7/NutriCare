@@ -18,15 +18,22 @@ class _PatientDietScreenState extends State<PatientDietScreen> {
     super.initState();
     _loadDiet();
   }
-
   Future<void> _loadDiet() async {
     try {
-      final diet = await DietService.getDietForPatient();
+      final response = await DietService.getDietForPatient();
 
-      if (diet != null) {
+      if (response != null && response["diet"] != null) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
-          _tableKey.currentState?.setWeeklyDiet(diet);
+          _tableKey.currentState?.setWeeklyDiet(response["diet"]);
+          _tableKey.currentState?.setCompletionStatus(
+            response["status"] ?? {},
+          );
         });
+      } else {
+        // ✅ Diet not assigned yet
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Diet not assigned yet")),
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -36,6 +43,8 @@ class _PatientDietScreenState extends State<PatientDietScreen> {
       setState(() => _loading = false);
     }
   }
+
+
 
   @override
   Widget build(BuildContext context) {
